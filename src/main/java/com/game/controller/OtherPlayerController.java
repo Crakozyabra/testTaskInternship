@@ -51,7 +51,8 @@ public class OtherPlayerController {
             title = isNull(title)?"":title;
             after = isNull(after)?0:after;
             before = isNull(before)?Long.MAX_VALUE:before;
-            banned = isNull(banned)?false:banned;
+            // banned = isNull(banned)?false:banned;
+            //banned = !isNull(banned) && banned;
             minExperience = isNull(minExperience)?0:minExperience;
             maxExperience = isNull(maxExperience)?Integer.MAX_VALUE:maxExperience;
             minLevel = isNull(minLevel)?0:minLevel;
@@ -97,7 +98,8 @@ public class OtherPlayerController {
         title = isNull(title)?"":title;
         after = isNull(after)?0:after;
         before = isNull(before)?Long.MAX_VALUE:before;
-        banned = isNull(banned)?false:banned;
+        // banned = isNull(banned)?false:banned;
+        //banned = !isNull(banned) && banned;
         minExperience = isNull(minExperience)?0:minExperience;
         maxExperience = isNull(maxExperience)?Integer.MAX_VALUE:maxExperience;
         minLevel = isNull(minLevel)?0:minLevel;
@@ -156,6 +158,9 @@ public class OtherPlayerController {
     @PostMapping("/{ID}")
     public ResponseEntity<Player> updatePlayer(@PathVariable("ID") long id,
                                                @RequestBody PlayerInfo info) {
+        if (isNull(info.banned) && isNull(info.birthday) && isNull(info.title) && isNull(info.name) && isNull(info.experience) && isNull(info.profession) && isNull(info.race)) {
+            return ResponseEntity.status(HttpStatus.OK).body(otherPlayerService.getPlayerById(id));
+        }
         if (id <= 0) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         if (nonNull(info.name) && (info.name.length() > 12 || info.name.isEmpty())) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         if (nonNull(info.title) && info.title.length() > 30) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -164,6 +169,7 @@ public class OtherPlayerController {
         int year = localDate.getYear();
         if (year < 2000 || year > 3000) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         boolean banned = !isNull(info.banned) && info.banned;
+
         if(isNull(info.experience) || info.experience < 0 || info.experience > 10_000_000) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 
 

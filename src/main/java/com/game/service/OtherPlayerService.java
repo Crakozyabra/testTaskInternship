@@ -155,6 +155,7 @@ public class OtherPlayerService {
                 filter(player -> {
                     return (player.getBirthday().getTime() <= before);
                 }).filter(player -> {
+                    if (banned == null) return true;
                     return (player.getBanned() == banned);
                 }).filter(player -> {
                     return (player.getExperience() >= minExperience);
