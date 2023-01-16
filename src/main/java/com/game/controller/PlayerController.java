@@ -20,7 +20,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @RestController
-@RequestMapping("/rest/players")
+@RequestMapping("/rest/players_mute")
 public class PlayerController {
 
 
@@ -32,22 +32,22 @@ public class PlayerController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public List<Player> getAll(@RequestParam(required = false) String name,
-                                   @RequestParam(required = false) String title,
-                                   @RequestParam(required = false) Race race,
-                                   @RequestParam(required = false) Profession profession,
-                                   @RequestParam(required = false) Long after,
-                                   @RequestParam(required = false) Long before,
-                                   @RequestParam(required = false) Boolean banned,
-                                   @RequestParam(required = false) Integer minExperience,
-                                   @RequestParam(required = false) Integer maxExperience,
-                                   @RequestParam(required = false) Integer minLevel,
-                                   @RequestParam(required = false) Integer maxLevel,
-                                   @RequestParam(required = false) PlayerOrder order,
-                                   @RequestParam(required = false) Integer pageNumber,
-                                   @RequestParam(required = false) Integer pageSize
-
-                       ) {
+    public List<Player> getAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Race race,
+            @RequestParam(required = false) Profession profession,
+            @RequestParam(required = false) Long after,
+            @RequestParam(required = false) Long before,
+            @RequestParam(required = false) Boolean banned,
+            @RequestParam(required = false) Integer minExperience,
+            @RequestParam(required = false) Integer maxExperience,
+            @RequestParam(required = false) Integer minLevel,
+            @RequestParam(required = false) Integer maxLevel,
+            @RequestParam(required = false) PlayerOrder order,
+            @RequestParam(required = false) Integer pageNumber,
+            @RequestParam(required = false) Integer pageSize
+    ) {
         name = isNull(name)?"":name;
         title = isNull(title)?"":title;
         after = isNull(after)?0:after;
