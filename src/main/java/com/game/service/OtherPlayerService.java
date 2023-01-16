@@ -177,7 +177,6 @@ public class OtherPlayerService {
 
     public Player createPlayer(String name, String title, Race race, Profession profession, long birthday, boolean banned, int experience) {
         Player player = makePlayerFromData(null, name, title, race, profession, birthday, banned, experience);
-        System.out.println(player);
         Player createdPlayer = null;
         try {
             createdPlayer = otherPlayerRepository.saveAndFlush(player);
@@ -190,7 +189,7 @@ public class OtherPlayerService {
 
 
     private int calculatePlayerLevel(int experience){
-        return (int) Math.round((Math.sqrt(2500.0 + 200 * experience) - 50.0) / 100.0);
+        return (int) Math.floor((Math.sqrt(2500.0 + 200 * experience) - 50.0) / 100.0);
     }
 
 
