@@ -4,10 +4,10 @@ import com.game.controller.PlayerOrder;
 import com.game.entity.Player;
 import com.game.entity.Profession;
 import com.game.entity.Race;
-import com.game.repository.IPlayerRepository;
+import com.game.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.Date;
@@ -18,28 +18,31 @@ import static java.util.Objects.isNull;
 
 @Service
 public class PlayerService {
-    private final IPlayerRepository IPlayerRepository;
-    //private final Repository playerRepository;
 
-    public PlayerService(@Qualifier("player_repository") @Autowired IPlayerRepository IPlayerRepository) {
-    /*public PlayerService(@Qualifier("player_repository") @Autowired IPlayerRepository playerRepository) {*/
-        this.IPlayerRepository = IPlayerRepository;
+    PlayerRepository playerRepository;
+
+    public PlayerService(@Autowired PlayerRepository playerRepository) {
+        this.playerRepository = playerRepository;
     }
 
-    public List<Player> getPlayers(String name,
-                                   String title,
-                                   Race race,
-                                   Profession profession,
-                                   Long after,
-                                   Long before,
-                                   Boolean banned,
-                                   Integer minExperience,
-                                   Integer maxExperience,
-                                   Integer minLevel,
-                                   Integer maxLevel,
-                                   PlayerOrder order,
-                                   Integer pageNumber,
-                                   Integer pageSize) {
+    public List<Player> getPlayers(
+            String name,
+            String title,
+            Race race,
+            Profession profession,
+            Long after,
+            Long before,
+            Boolean banned,
+            Integer minExperience,
+            Integer maxExperience,
+            Integer minLevel,
+            Integer maxLevel,
+            PlayerOrder order,
+            Integer pageNumber,
+            Integer pageSize
+    ) {
+
+        List<Player> players = playerRepository.findAll();
 
         List<Player> filteredPlayerstList = filterPlayer (
                 name,
@@ -52,7 +55,8 @@ public class PlayerService {
                 minExperience,
                 maxExperience,
                 minLevel,
-                maxLevel
+                maxLevel,
+                players
         );
 
         if (order == PlayerOrder.ID) {
@@ -87,6 +91,9 @@ public class PlayerService {
                                    Integer maxExperience,
                                    Integer minLevel,
                                    Integer maxLevel) {
+
+        List<Player> players = playerRepository.findAll();
+
         return filterPlayer (
                 name,
                 title,
@@ -98,24 +105,28 @@ public class PlayerService {
                 minExperience,
                 maxExperience,
                 minLevel,
-                maxLevel
+                maxLevel,
+                players
         ).size();
     }
 
 
-    private List<Player> filterPlayer (String name,
-                               String title,
-                               Race race,
-                               Profession profession,
-                               Long after,
-                               Long before,
-                               Boolean banned,
-                               Integer minExperience,
-                               Integer maxExperience,
-                               Integer minLevel,
-                               Integer maxLevel) {
+    private List<Player> filterPlayer (
+            String name,
+            String title,
+            Race race,
+            Profession profession,
+            Long after,
+            Long before,
+            Boolean banned,
+            Integer minExperience,
+            Integer maxExperience,
+            Integer minLevel,
+            Integer maxLevel,
+            List<Player> players
+    ) {
 
-       return IPlayerRepository.getAll().stream().
+        return players.stream().
                 filter(player ->  {
                     return player.getName().contains(name);
                 }).
@@ -136,6 +147,7 @@ public class PlayerService {
                 filter(player -> {
                     return (player.getBirthday().getTime() <= before);
                 }).filter(player -> {
+                    if (banned == null) return true;
                     return (player.getBanned() == banned);
                 }).filter(player -> {
                     return (player.getExperience() >= minExperience);
@@ -150,20 +162,26 @@ public class PlayerService {
 
 
     public Player getPlayerById(Long id) {
-        return IPlayerRepository.findById(id).get();
+        return playerRepository.findById(id).get();
     }
 
 
 
     public Player createPlayer(String name, String title, Race race, Profession profession, long birthday, boolean banned, int experience) {
         Player player = makePlayerFromData(null, name, title, race, profession, birthday, banned, experience);
-        return IPlayerRepository.save(player);
+        Player createdPlayer = null;
+        try {
+            createdPlayer = playerRepository.saveAndFlush(player);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return createdPlayer;
     }
 
 
 
     private int calculatePlayerLevel(int experience){
-        return (int) Math.round((Math.sqrt(2500.0 + 200 * experience) - 50.0) / 100.0);
+        return (int) Math.floor((Math.sqrt(2500.0 + 200 * experience) - 50.0) / 100.0);
     }
 
 
@@ -194,26 +212,64 @@ public class PlayerService {
     }
 
 
+    @Transactional
+    public Player updatePlayer(long id, String name, String title, Race race, Profession profession, Long birthday, Boolean banned, Integer experience) {
+        Player playerById = null;
+        try {
+            playerById = playerRepository.findById(id).get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-    public Player updatePlayer(long id, String name, String title, Race race, Profession profession, long birthday, boolean banned, int experience) {
-        Player playerById = (Player) IPlayerRepository.findById(id).orElse(null);
         if (isNull(playerById)) {
             return null;
         }
 
-        Player player = makePlayerFromData(id, name, title, race, profession, birthday, banned, experience);
-        return IPlayerRepository.updateById(player);
+        if (name != null) {
+            playerById.setName(name);
+        }
+
+        if (title != null) {
+            playerById.setTitle(title);
+        }
+
+        if (race != null) {
+            playerById.setRace(race);
+        }
+
+        if (profession != null) {
+            playerById.setProfession(profession);
+        }
+
+        if (birthday != null) {
+            playerById.setBirthday(new Date(birthday));
+        }
+
+        if (banned != null) {
+            playerById.setBanned(banned);
+        }
+
+        if (experience != null) {
+            playerById.setExperience(experience);
+            int level = calculatePlayerLevel(experience);
+            int untilNextLevel = calculatePlayerUntilNextLevel(level, experience);
+            playerById.setLevel(level);
+            playerById.setUntilNextLevel(untilNextLevel);
+        }
+
+        return playerById;
     }
 
-
-
+    @Transactional
     public Player deletePlayer(long id) {
-        Player player = IPlayerRepository.findById(id).orElse(null);
+        Player player = playerRepository.findById(id).orElse(null);
         if (isNull(player)) {
             return null;
         }
 
-        IPlayerRepository.deleteById(id);
+        playerRepository.deleteById(id);
         return player;
     }
+
+
 }
